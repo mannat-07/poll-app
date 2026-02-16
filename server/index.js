@@ -36,6 +36,12 @@ mongoose.connect(MONGODB_URI)
 /* ======================
    CREATE POLL
 ====================== */
+
+app.get('/', (req,res)=> {
+  res.send('Server is running');
+})
+
+
 app.post("/api/polls", async (req, res) => {
   try {
     const { question, options } = req.body;
