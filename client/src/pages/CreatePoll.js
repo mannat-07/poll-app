@@ -14,7 +14,7 @@ function CreatePoll() {
     setError("");
     setLink("");
 
-    // Frontend validation
+    // Validation
     if (!question.trim()) {
       setError("Question is required");
       return;
@@ -25,7 +25,6 @@ function CreatePoll() {
       return;
     }
 
-    // Filter out empty options and validate
     const validOptions = options.filter(o => o.trim() !== "");
 
     if (validOptions.length < 2) {
@@ -33,14 +32,12 @@ function CreatePoll() {
       return;
     }
 
-    // Check for duplicate options
     const uniqueOptions = [...new Set(validOptions.map(o => o.trim().toLowerCase()))];
     if (uniqueOptions.length !== validOptions.length) {
       setError("Options must be unique");
       return;
     }
 
-    // Check option length
     for (let i = 0; i < validOptions.length; i++) {
       if (validOptions[i].length > 100) {
         setError(`Option ${i + 1} must be 100 characters or less`);
@@ -59,7 +56,6 @@ function CreatePoll() {
       const pollLink = `${window.location.origin}/poll/${res.data.pollId}`;
       setLink(pollLink);
 
-      // Reset form
       setQuestion("");
       setOptions(["", ""]);
 

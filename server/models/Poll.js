@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const pollSchema = new mongoose.Schema({
   question: { 
-    type: String, 
+    type: String,
     required: true,
     maxlength: 200,
     trim: true
@@ -16,13 +16,13 @@ const pollSchema = new mongoose.Schema({
         trim: true
       },
       votes: { 
-        type: Number, 
+        type: Number,
         default: 0,
         min: 0
       }
     }
   ],
-  voters: [String], // Store IP addresses for IP-based voting prevention
+  voters: [String], // IP addresses to prevent duplicate voting
   createdAt: {
     type: Date,
     default: Date.now

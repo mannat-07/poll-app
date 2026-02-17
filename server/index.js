@@ -18,7 +18,7 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
-// Middleware to capture IP address
+// Capture IP address
 app.use((req, res, next) => {
   req.userIp = req.headers['x-forwarded-for'] || 
                req.connection.remoteAddress || 
@@ -27,21 +27,17 @@ app.use((req, res, next) => {
   next();
 });
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://mannatgarg2006:gargi167@poll.xkrpbpu.mongodb.net/?appName=poll";
+const MONGODB_URI = process.env.MONGODB_URI;
 
 mongoose.connect(MONGODB_URI)
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.log(err));
 
-/* ======================
-   CREATE POLL
-====================== */
-
-app.get('/', (req,res)=> {
+app.get('/', (req, res) => {
   res.send('Server is running');
-})
+});
 
-
+// Create poll
 app.post("/api/polls", async (req, res) => {
   try {
     const { question, options } = req.body;
@@ -64,7 +60,6 @@ app.post("/api/polls", async (req, res) => {
       return res.status(400).json({ error: "Maximum 10 options allowed" });
     }
 
-    // Validate each option
     for (let i = 0; i < options.length; i++) {
       if (!options[i] || options[i].trim().length === 0) {
         return res.status(400).json({ error: `Option ${i + 1} cannot be empty` });
@@ -74,7 +69,6 @@ app.post("/api/polls", async (req, res) => {
       }
     }
 
-    // Check for duplicate options
     const uniqueOptions = [...new Set(options.map(o => o.trim().toLowerCase()))];
     if (uniqueOptions.length !== options.length) {
       return res.status(400).json({ error: "Options must be unique" });
@@ -95,9 +89,7 @@ app.post("/api/polls", async (req, res) => {
   }
 });
 
-/* ======================
-   GET POLL
-====================== */
+// Get poll by ID
 app.get("/api/polls/:id", async (req, res) => {
   try {
     const poll = await Poll.findById(req.params.id);
@@ -109,9 +101,7 @@ app.get("/api/polls/:id", async (req, res) => {
   }
 });
 
-/* ======================
-   SOCKET.IO
-====================== */
+// Socket.IO for real-time voting
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
@@ -128,32 +118,26 @@ io.on("connection", (socket) => {
         return;
       }
 
-      // Validate option index
       if (optionIndex < 0 || optionIndex >= poll.options.length) {
         socket.emit("vote_error", { error: "Invalid option" });
         return;
       }
 
-      // Get IP address from socket
       const ip = socket.handshake.headers['x-forwarded-for'] || 
                  socket.handshake.address ||
                  socket.conn.remoteAddress;
 
-      // Fairness Mechanism #2: IP-based voting prevention
-      // This prevents repeat voting from the same IP address
+      // Check if IP already voted
       if (poll.voters.includes(ip)) {
         socket.emit("vote_error", { error: "You have already voted" });
         return;
       }
 
-      // Update vote count
       poll.options[optionIndex].votes += 1;
       poll.voters.push(ip);
 
-      // Save to database first (persistence)
       await poll.save();
 
-      // Broadcast updated poll to all clients in the room
       io.to(pollId).emit("update", poll);
 
       console.log(`Vote registered for poll ${pollId}, option ${optionIndex} from IP ${ip}`);
