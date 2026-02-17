@@ -20,10 +20,12 @@ app.use(express.json());
 
 // Capture IP address
 app.use((req, res, next) => {
-  req.userIp = req.headers['x-forwarded-for'] || 
-               req.connection.remoteAddress || 
-               req.socket.remoteAddress ||
-               req.ip;
+  const rawIp = req.headers['x-forwarded-for'] || 
+                req.connection.remoteAddress || 
+                req.socket.remoteAddress ||
+                req.ip;
+  // Extract only the first IP if multiple IPs are present
+  req.userIp = (rawIp || '').split(',')[0].trim();
   next();
 });
 
@@ -123,9 +125,12 @@ io.on("connection", (socket) => {
         return;
       }
 
-      const ip = socket.handshake.headers['x-forwarded-for'] || 
-                 socket.handshake.address ||
-                 socket.conn.remoteAddress;
+      const rawIp = socket.handshake.headers['x-forwarded-for'] || 
+                    socket.handshake.address ||
+                    socket.conn.remoteAddress;
+      
+      // Extract only the first IP if multiple IPs are present
+      const ip = (rawIp || '').split(',')[0].trim();
 
       // Check if IP already voted
       if (poll.voters.includes(ip)) {
